@@ -1,16 +1,19 @@
-import sys
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow
+)
 
-from PySide6 import QtWidgets
+app = QApplication([])
 
-from ui.mainwindow import Ui_MainWindow
-
-class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setupUi(self)
 
-app = QtWidgets.QApplication(sys.argv)
+        self.setWindowTitle("WheelShelf")
+
+        self.setMinimumSize(QSize(800, 500))
 
 window = MainWindow()
 window.show()
+
 app.exec()
