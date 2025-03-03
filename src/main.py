@@ -3,15 +3,16 @@ from PySide6.QtCore import Qt
 
 import pandas as pd
 
+import sys
 import os
 
-from utils import pathwrap, TableModel
+from utils import pathwrap, error_hook, TableModel
 from collection import NewCollection
-
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
+        sys.excepthook = error_hook
 
         self.setWindowTitle("WheelShelf")
         self.setMinimumSize(QtCore.QSize(800, 500))
@@ -77,6 +78,16 @@ class MainWindow(QtWidgets.QMainWindow):
         remove_action.setStatusTip("Removes a car from the collection.")
         remove_action.setShortcut(QtGui.QKeySequence("Del"))
 
+        collection_action = QtGui.QAction(
+            QtGui.QIcon(pathwrap("./icons/books-stack")), "Change Collection", self
+        )
+        collection_action.setStatusTip("Changes the active collection.")
+
+        spacer = QtWidgets.QWidget()
+        spacer.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
+
         toolbar.addAction(import_action)
         toolbar.addAction(export_action)
 
@@ -92,6 +103,9 @@ class MainWindow(QtWidgets.QMainWindow):
         toolbar.addSeparator()
         toolbar.addAction(add_action)
         toolbar.addAction(remove_action)
+
+        toolbar.addWidget(spacer)
+        toolbar.addAction(collection_action)
 
         toolbar.setMovable(False)
 
@@ -122,6 +136,7 @@ class MainWindow(QtWidgets.QMainWindow):
 class GreetingWindow(QtWidgets.QDialog):
     def __init__(self):
         super().__init__()
+        sys.excepthook = error_hook
 
         self.setFixedSize(QtCore.QSize(600, 350))
 
@@ -171,7 +186,7 @@ class GreetingWindow(QtWidgets.QDialog):
         self.setLayout(layout)
 
     def new_collection(self):
-        dialog = NewCollection()
+        dialog = NewCollection(self)
         dialog.setWindowTitle("New Collection")
         dialog.exec()
 

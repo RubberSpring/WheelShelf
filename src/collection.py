@@ -1,18 +1,31 @@
-from PySide6 import QtCore, QtWidgets, QtGui
+from PySide6 import QtWidgets
 from PySide6.QtCore import Qt
 
-from utils import pathwrap, ButtonLineEdit
+from utils import pathwrap, error_hook, ButtonLineEdit
+
 
 from pathlib import Path
 import sqlite3
-import shutil
 import json
+import sys
 import os
 
 
-class NewCollection(QtWidgets.QDialog):
+class CollectionManager(QtWidgets.QDialog):
     def __init__(self):
         super().__init__()
+
+        collection_list = QtWidgets.QListWidget()
+        collection_list.addItems()
+
+        main_layout = QtWidgets.QHBoxLayout()
+
+class NewCollection(QtWidgets.QDialog):
+    def __init__(self, window):
+        super().__init__()
+        sys.excepthook = error_hook
+
+        self.parent_win = window
 
         title = QtWidgets.QLabel("This wizard will create a new WheelShelf collection")
         title_font = title.font()
@@ -56,17 +69,17 @@ class NewCollection(QtWidgets.QDialog):
         dialog = QtWidgets.QMessageBox.question(
             self,
             "Confirm Collection",
-            "Collection will be created at\n%s" % path,
+            f"Collection will be created at\n{path}",
             buttons=QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel,
             defaultButton=QtWidgets.QMessageBox.Cancel,
         )
         if dialog == QtWidgets.QMessageBox.Ok:
-
             try:
                 Path(path).mkdir(parents=True)
             except FileExistsError:
+                name = self.name_input.text()
                 err = QtWidgets.QMessageBox.critical(
-                    self, "Failed", "Failed to create Collection, a folder named %s already exists" % self.name_input.text()
+                    self, "Failed", f"Failed to create Collection, a folder named {name} already exists"
                 )
                 if err == QtWidgets.QMessageBox.Ok:
                     return None
@@ -88,6 +101,18 @@ class NewCollection(QtWidgets.QDialog):
                     self, "Failed", "Failed to create Collection"
                 )
 
+            if not os.path.exists(pathwrap("./config/collections.json")):
+                file = Path("./config/collections.json")
+                file.parent.mkdir(exist_ok=True,parents=True)
+                with open(pathwrap("./config/collections.json"),"w") as f:
+                    info = {"collections":[{"name":self.name_input.text(),"path":path}]}
+                    f.write(json.dumps(info))
+            else:
+                with open(pathwrap("./config/collections.json"), "r+") as f:
+                    info = f.read()
+                    info["collections"].append({"name":self.name_input.text(),"path":path})
+                    f.write(json.dumps(info))
+
             done = QtWidgets.QMessageBox.information(
                 self,
                 "Done!",
@@ -95,5 +120,5 @@ class NewCollection(QtWidgets.QDialog):
                 buttons=QtWidgets.QMessageBox.Ok
             )
             if done == QtWidgets.QMessageBox.Ok:
+                self.parent_win.close()
                 self.close()
-            
