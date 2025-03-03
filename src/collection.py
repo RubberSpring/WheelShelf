@@ -62,11 +62,14 @@ class NewCollection(QtWidgets.QDialog):
         )
         if dialog == QtWidgets.QMessageBox.Ok:
 
-            Path(path).mkdir(parents=True)
-            if not os.path.exists(path):
-                QtWidgets.QMessageBox.critical(
-                    self, "Failed", "Failed to create Collection"
+            try:
+                Path(path).mkdir(parents=True)
+            except FileExistsError:
+                err = QtWidgets.QMessageBox.critical(
+                    self, "Failed", "Failed to create Collection, a folder named %s already exists" % self.name_input.text()
                 )
+                if err == QtWidgets.QMessageBox.Ok:
+                    return None
 
             conn = sqlite3.connect(Path(path, "collection.db"))
             conn.close()
@@ -91,4 +94,6 @@ class NewCollection(QtWidgets.QDialog):
                 "Finished creating collection.",
                 buttons=QtWidgets.QMessageBox.Ok
             )
+            if done == QtWidgets.QMessageBox.Ok:
+                self.close()
             
