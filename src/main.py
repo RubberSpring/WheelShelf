@@ -6,6 +6,8 @@ import pandas as pd
 import os
 
 from utils import pathwrap, TableModel
+from collection import NewCollection
+
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -133,7 +135,9 @@ class GreetingWindow(QtWidgets.QDialog):
         title.setFont(title_font)
         title.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
-        desc = QtWidgets.QLabel("WheelShelf is a powerful Hot Wheels\ncollection management software for PC")
+        desc = QtWidgets.QLabel(
+            "WheelShelf is a powerful Hot Wheels\ncollection management software for PC."
+        )
         desc_font = desc.font()
         desc_font.setPointSize(14)
         desc.setFont(desc_font)
@@ -145,6 +149,7 @@ class GreetingWindow(QtWidgets.QDialog):
         help.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         new_btn = QtWidgets.QPushButton("New Collection")
+        new_btn.clicked.connect(self.new_collection)
 
         import_btn = QtWidgets.QPushButton("Import Collection file")
 
@@ -164,6 +169,12 @@ class GreetingWindow(QtWidgets.QDialog):
         layout.addWidget(help)
         layout.addLayout(buttons)
         self.setLayout(layout)
+
+    def new_collection(self):
+        dialog = NewCollection()
+        dialog.setWindowTitle("New Collection")
+        dialog.exec()
+
 
 app = QtWidgets.QApplication([])
 window = MainWindow()
