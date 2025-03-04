@@ -1,29 +1,69 @@
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt
 
-from utils import pathwrap, error_hook, ButtonLineEdit
-
+from utils import pathwrap, ButtonLineEdit
 
 from pathlib import Path
 import sqlite3
 import json
-import sys
 import os
 
 
 class CollectionManager(QtWidgets.QDialog):
-    def __init__(self):
+    def delete_collection(self, name):
+        for collection in self.data["collections"]:
+            if collection["name"] == name:
+                self.data["collections"].remove(collection)
+                with open(pathwrap("./config/collections.json"), "w") as f:
+                    f.write(json.dumps(self.data))
+
+    def export_collection(self, name):
+        for collection in self.data["collections"]:
+            if collection["name"] == name:
+                file = QtWidgets.QFileDialog.getSaveFileName(self)
+                print(file)
+
+    def __init__(self, window):
         super().__init__()
 
+        with open(pathwrap("./config/collections.json"), "r") as f:
+            self.data = json.load(f)
+
+        def getitem(item):
+            global name
+            name = item.text()
+
         collection_list = QtWidgets.QListWidget()
-        collection_list.addItems()
+        collection_list.itemClicked.connect(getitem)
+
+        for collection in self.data["collections"]:
+            collection_list.addItem(collection["name"])
+
+        open_button = QtWidgets.QPushButton("Open")
+        open_button.clicked.connect(window.loadCollection(name))
+
+        delete_button = QtWidgets.QPushButton("Delete")
+        open_button.clicked.connect(self.delete_collection(name))
+
+        export_button = QtWidgets.QPushButton("Export")
+        export_button.clicked.connect(self.export_collection(name))
 
         main_layout = QtWidgets.QHBoxLayout()
+        buttons_layout = QtWidgets.QVBoxLayout()
+
+        buttons_layout.addWidget(open_button)
+        buttons_layout.addWidget(delete_button)
+        buttons_layout.addWidget(export_button)
+
+        main_layout.addWidget(collection_list)
+        main_layout.addLayout(buttons_layout)
+
+        self.setLayout(main_layout)
+
 
 class NewCollection(QtWidgets.QDialog):
     def __init__(self, window):
         super().__init__()
-        sys.excepthook = error_hook
 
         self.parent_win = window
 
@@ -79,12 +119,34 @@ class NewCollection(QtWidgets.QDialog):
             except FileExistsError:
                 name = self.name_input.text()
                 err = QtWidgets.QMessageBox.critical(
-                    self, "Failed", f"Failed to create Collection, a folder named {name} already exists"
+                    self,
+                    "Failed",
+                    f"Failed to create Collection, a folder named {name} already exists",
                 )
                 if err == QtWidgets.QMessageBox.Ok:
                     return None
 
             conn = sqlite3.connect(Path(path, "collection.db"))
+            cursor = conn.cursor()
+            cursor.execute(
+                """CREATE TABLE "cars" (
+	                        "image"	TEXT,
+	                        "model-name"	TEXT,
+	                        "release-year"	TEXT,
+	                        "series"	TEXT,
+	                        "color"	TEXT,
+	                        "wheel-type"	TEXT,
+	                        "base-type"	TEXT,
+	                        "base-color"	TEXT,
+	                        "window-color"	TEXT,
+	                        "interior-color"	TEXT,
+	                        "toy-num"	TEXT,
+	                        "assortment-num"	TEXT,
+	                        "scale"	TEXT,
+	                        "country"	TEXT
+                            );"""
+            )
+            conn.commit()
             conn.close()
             if not os.path.exists(Path(path, "collection.db")):
                 QtWidgets.QMessageBox.critical(
@@ -103,21 +165,25 @@ class NewCollection(QtWidgets.QDialog):
 
             if not os.path.exists(pathwrap("./config/collections.json")):
                 file = Path("./config/collections.json")
-                file.parent.mkdir(exist_ok=True,parents=True)
-                with open(pathwrap("./config/collections.json"),"w") as f:
-                    info = {"collections":[{"name":self.name_input.text(),"path":path}]}
+                file.parent.mkdir(exist_ok=True, parents=True)
+                with open(pathwrap("./config/collections.json"), "w") as f:
+                    info = {
+                        "collections": [{"name": self.name_input.text(), "path": path}]
+                    }
                     f.write(json.dumps(info))
             else:
                 with open(pathwrap("./config/collections.json"), "r+") as f:
                     info = f.read()
-                    info["collections"].append({"name":self.name_input.text(),"path":path})
+                    info["collections"].append(
+                        {"name": self.name_input.text(), "path": path}
+                    )
                     f.write(json.dumps(info))
 
             done = QtWidgets.QMessageBox.information(
                 self,
                 "Done!",
                 "Finished creating collection.",
-                buttons=QtWidgets.QMessageBox.Ok
+                buttons=QtWidgets.QMessageBox.Ok,
             )
             if done == QtWidgets.QMessageBox.Ok:
                 self.parent_win.close()

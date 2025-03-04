@@ -4,15 +4,17 @@ from PySide6.QtCore import Qt
 from pathlib import Path
 from sys import exit
 
+
 def pathwrap(path):
     return str(Path(path))
+
 
 def error_hook(exc_type, exc_value, exc_tb):
     critical_error = QtWidgets.QMessageBox.critical(
         title="Internal Error :(",
         text="A internal error ocurred and WheelShelf needs to be closed.",
         buttons=QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Help,
-        defaultButton=QtWidgets.QMessageBox.Ok
+        defaultButton=QtWidgets.QMessageBox.Ok,
     )
 
     if critical_error == QtWidgets.QMessageBox.Ok:
@@ -21,18 +23,22 @@ def error_hook(exc_type, exc_value, exc_tb):
         dlg = DebugDialog(exc_type, exc_value, exc_tb)
         dlg.setWindowTitle("Error Debug")
         dlg.exec()
-        
+
+
 class DebugDialog(QtWidgets.QDialog):
     def __init__(self, exc_type, exc_value, exc_tb):
         super().__init__()
 
-        title = QtWidgets.QLabel("This is development debug data.\nIf you came from an error message, remember to post this debug data when opening a issue.")
+        title = QtWidgets.QLabel(
+            "This is development debug data.\nIf you came from an error message, remember to post this debug data when opening a issue."
+        )
 
         debug = QtWidgets.QPlainTextEdit(f"{exc_tb}\n{exc_type}:\n{exc_value}")
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(title)
         layout.addWidget(debug)
+
 
 class TableModel(QtCore.QAbstractTableModel):
     def __init__(self, data):

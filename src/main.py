@@ -3,16 +3,29 @@ from PySide6.QtCore import Qt
 
 import pandas as pd
 
+from pathlib import Path
+import sqlite3
+import json
 import sys
 import os
 
-from utils import pathwrap, error_hook, TableModel
+from utils import pathwrap, TableModel
 from collection import NewCollection
 
+
 class MainWindow(QtWidgets.QMainWindow):
+    def load_collection(self, name):
+        with open(pathwrap("./config/collections.json"), "r") as f:
+            collections = json.load(f)["collections"]
+            for collection in collections:
+                if collection["name"] == name:
+                    path = collection["path"]
+        connect = sqlite3.connect(Path(path, "collection.db"))
+        self.model = TableModel(pd.read_sql_query("SELECT * FROM cars", connect))
+        self.table.setModel(self.model)
+
     def __init__(self):
         super().__init__()
-        sys.excepthook = error_hook
 
         self.setWindowTitle("WheelShelf")
         self.setMinimumSize(QtCore.QSize(800, 500))
@@ -113,19 +126,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.table = QtWidgets.QTableView()
 
-        data = pd.DataFrame(
-            [],
-            columns=["Image", "Model Name", "Toy Number", "Series", "Color", "Price"],
-            index=[],
-        )
-
-        self.model = TableModel(data)
-        self.table.setModel(self.model)
-
         if not os.path.exists(pathwrap("./config/collections.json")):
             dialog = GreetingWindow()
             dialog.setWindowTitle("Welcome!")
             dialog.exec()
+        else:
+            with open(pathwrap("./config/collections.json"), "r") as f:
+                collection = json.load(f)["collections"][0]
+            self.load_collection(collection["name"])
 
         main_layout = QtWidgets.QHBoxLayout()
         side_layout = QtWidgets.QVBoxLayout()
@@ -136,7 +144,6 @@ class MainWindow(QtWidgets.QMainWindow):
 class GreetingWindow(QtWidgets.QDialog):
     def __init__(self):
         super().__init__()
-        sys.excepthook = error_hook
 
         self.setFixedSize(QtCore.QSize(600, 350))
 
