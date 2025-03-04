@@ -9,22 +9,6 @@ def pathwrap(path):
     return str(Path(path))
 
 
-def error_hook(exc_type, exc_value, exc_tb):
-    critical_error = QtWidgets.QMessageBox.critical(
-        title="Internal Error :(",
-        text="A internal error ocurred and WheelShelf needs to be closed.",
-        buttons=QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Help,
-        defaultButton=QtWidgets.QMessageBox.Ok,
-    )
-
-    if critical_error == QtWidgets.QMessageBox.Ok:
-        exit(1)
-    elif critical_error == QtWidgets.QMessageBox.Help:
-        dlg = DebugDialog(exc_type, exc_value, exc_tb)
-        dlg.setWindowTitle("Error Debug")
-        dlg.exec()
-
-
 class DebugDialog(QtWidgets.QDialog):
     def __init__(self, exc_type, exc_value, exc_tb):
         super().__init__()
